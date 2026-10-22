@@ -1,0 +1,16 @@
+#!/bin/sh
+# Run by mcp-vault-instant-backup.service after the .path unit saw a change.
+# Debounce: the unit sleeps first, so a burst of edits yields one archive; the loop
+# below catches edits that land while the backup/upload is running.
+set -eu
+FILES="/var/lib/mcp-vault/vault.enc /var/lib/mcp-vault/clients.json"
+stamp() { stat -c '%Y.%y' $FILES 2>/dev/null | tr '\n' ' '; }
+exec 9>/var/backups/mcp-vault/.lock
+flock 9
+for _ in 1 2 3; do
+  before=$(stamp)
+  /usr/local/sbin/mcp-vault-backup change
+  /usr/local/sbin/mcp-vault-gdrive-sync
+  [ "$(stamp)" = "$before" ] && exit 0
+  sleep 10
+done

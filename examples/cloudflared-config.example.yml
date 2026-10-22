@@ -1,0 +1,29 @@
+# OPTIONAL Cloudflare Tunnel config for exposing the loopback HTTP transport
+# to Aryan. NOT active. Read REPORT.md ("Connecting Aryan") first.
+#
+# One-time setup (run yourself; requires your Cloudflare account + a domain):
+#   cloudflared tunnel login
+#   cloudflared tunnel create mcp-vault
+#   cloudflared tunnel route dns mcp-vault vault.<your-domain>
+#   cp examples/cloudflared-config.example.yml ~/.cloudflared/mcp-vault.yml   # then edit
+#   mcp-vault http enable --allowed-host vault.<your-domain>
+#   cloudflared tunnel --config ~/.cloudflared/mcp-vault.yml run mcp-vault
+#
+# Then, in the Cloudflare dashboard (Zero Trust > Access > Applications), protect
+# vault.<your-domain> with a self-hosted application whose ONLY policy is
+# "Service Auth" with a dedicated service token for Aryan, and add a WAF rule
+# allowing only Aryan's server egress IP. Requests without the Access headers
+# never reach this Mac.
+
+tunnel: mcp-vault
+credentials-file: /Users/YOU/.cloudflared/<TUNNEL-ID>.json
+
+ingress:
+  - hostname: vault.<your-domain>
+    path: ^/mcp$
+    service: http://127.0.0.1:8765
+    originRequest:
+      # Keep the public Host header so mcp-vault's Host allowlist applies.
+      noTLSVerify: false
+      connectTimeout: 10s
+  - service: http_status:404

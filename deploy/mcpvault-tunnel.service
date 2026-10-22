@@ -1,0 +1,29 @@
+# Cloudflare named tunnel: public HTTPS hostname -> 127.0.0.1:8765/mcp ONLY.
+# Credentials (root 0400 in /etc/cloudflared) are passed as a systemd credential.
+[Unit]
+Description=MCPVault Cloudflare tunnel
+After=network-online.target mcp-vault.service
+Wants=network-online.target
+
+[Service]
+Type=simple
+DynamicUser=yes
+LoadCredential=tunnel.json:/etc/cloudflared/mcpvault.json
+ExecStart=/usr/local/bin/cloudflared tunnel --no-autoupdate --config /etc/cloudflared/mcpvault.yml run
+Restart=on-failure
+RestartSec=5
+MemoryMax=150M
+NoNewPrivileges=yes
+ProtectSystem=strict
+ProtectHome=yes
+PrivateTmp=yes
+PrivateDevices=yes
+ProtectKernelTunables=yes
+ProtectKernelModules=yes
+ProtectControlGroups=yes
+LockPersonality=yes
+RestrictSUIDSGID=yes
+CapabilityBoundingSet=
+
+[Install]
+WantedBy=multi-user.target

@@ -1,0 +1,42 @@
+#!/bin/sh
+# Encrypted backup of the vault DATA (vault.enc, clients.json, config.json, audit.log)
+# into /var/backups/mcp-vault, wrapped in a gpg-symmetric (AES-256, MDC) archive
+# keyed by /etc/mcp-vault/backup.pass.
+#   mcp-vault-backup nightly   -> mcp-vault-<UTC>.tar.gpg          (keep newest 14)
+#   mcp-vault-backup change    -> mcp-vault-<UTC>-change.tar.gpg   (keep newest 30)
+# The master key is deliberately NOT included: keep /etc/mcp-vault/master.key
+# and backup.pass in a separate, offline place (see docs/runbooks/server-deployment.md).
+set -eu
+umask 077
+MODE="${1:-nightly}"
+SRC=/var/lib/mcp-vault
+DST=/var/backups/mcp-vault
+PASS=/etc/mcp-vault/backup.pass
+case "$MODE" in
+  nightly) SUFFIX=""; KEEP=14; GLOB='mcp-vault-????????T??????Z.tar.gpg' ;;
+  change)  SUFFIX="-change"; KEEP=30; GLOB='mcp-vault-*-change.tar.gpg' ;;
+  *) echo "usage: $0 nightly|change" >&2; exit 2 ;;
+esac
+
+install -d -m 0700 "$DST"
+TMP=$(mktemp -d)
+trap 'rm -rf "$TMP"' EXIT
+OUT="$DST/mcp-vault-$(date -u +%Y%m%dT%H%M%SZ)$SUFFIX.tar.gpg"
+
+FILES=""
+for f in vault.enc clients.json config.json audit.log; do [ -e "$SRC/$f" ] && FILES="$FILES $f"; done
+[ -n "$FILES" ] || { echo "nothing to back up" >&2; exit 1; }
+
+# shellcheck disable=SC2086
+tar -C "$SRC" -cf - $FILES |
+  gpg --homedir "$TMP" --batch --yes --quiet --pinentry-mode loopback --passphrase-file "$PASS" \
+      --symmetric --cipher-algo AES256 --s2k-mode 3 --s2k-digest-algo SHA512 --s2k-count 65011712 -o "$OUT.partial"
+
+# Verify the archive decrypts and lists before keeping it.
+gpg --homedir "$TMP" --batch --quiet --pinentry-mode loopback --passphrase-file "$PASS" -d "$OUT.partial" | tar -tf - >/dev/null
+mv "$OUT.partial" "$OUT"
+
+# Retention: keep the newest $KEEP archives of this kind.
+# shellcheck disable=SC2012
+ls -1 "$DST"/$GLOB 2>/dev/null | sort -r | tail -n +"$((KEEP + 1))" | xargs -r rm -f
+echo "backup written: $OUT"

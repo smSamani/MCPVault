@@ -1,0 +1,35 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!--
+  OPTIONAL launchd agent for the loopback HTTP transport (for Aryan).
+  NOT installed by default. Only use after `mcp-vault http enable` and after
+  creating an http client profile. It listens on 127.0.0.1 only; exposure to
+  Aryan happens through a tunnel you configure yourself (see REPORT.md).
+
+  Install:   cp examples/mcp-vault-http.launchd.plist ~/Library/LaunchAgents/
+             launchctl bootstrap gui/$(id -u) ~/Library/LaunchAgents/mcp-vault-http.launchd.plist
+  Remove:    launchctl bootout gui/$(id -u)/local.mcp-vault-http
+-->
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+  <key>Label</key>
+  <string>local.mcp-vault-http</string>
+  <key>ProgramArguments</key>
+  <array>
+    <string>/ABSOLUTE/PATH/TO/node</string>
+    <string>/ABSOLUTE/PATH/TO/mcp-vault/dist/src/cli.js</string>
+    <string>serve-http</string>
+  </array>
+  <key>RunAtLoad</key>
+  <true/>
+  <key>KeepAlive</key>
+  <dict>
+    <key>SuccessfulExit</key>
+    <false/>
+  </dict>
+  <key>StandardErrorPath</key>
+  <string>/Users/YOU/.mcp-vault/http-stderr.log</string>
+  <key>Umask</key>
+  <integer>63</integer>
+</dict>
+</plist>

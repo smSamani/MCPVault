@@ -1,0 +1,10 @@
+[Unit]
+Description=Watch MCPVault data for changes (instant encrypted backup)
+
+[Path]
+PathChanged=/var/lib/mcp-vault/vault.enc
+PathChanged=/var/lib/mcp-vault/clients.json
+Unit=mcp-vault-instant-backup.service
+
+[Install]
+WantedBy=multi-user.target

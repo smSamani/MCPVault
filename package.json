@@ -1,0 +1,31 @@
+{
+  "name": "mcp-vault",
+  "version": "2.0.0",
+  "description": "Security-first local password manager exposed as an MCP server (stdio + optional loopback Streamable HTTP; macOS Keychain or Linux key file).",
+  "private": true,
+  "type": "module",
+  "license": "MIT",
+  "bin": {
+    "mcp-vault": "dist/src/cli.js"
+  },
+  "engines": {
+    "node": ">=20"
+  },
+  "os": [
+    "darwin",
+    "linux"
+  ],
+  "scripts": {
+    "build": "rm -rf dist && tsc -p tsconfig.json && chmod 755 dist/src/cli.js",
+    "test": "npm run build && node --test dist/test/*.test.js",
+    "smoke": "node scripts/smoke.mjs"
+  },
+  "devDependencies": {
+    "@types/node": "^22.10.0",
+    "typescript": "^5.7.0"
+  },
+  "dependencies": {
+    "@modelcontextprotocol/sdk": "1.32.1",
+    "zod": "4.6.7"
+  }
+}

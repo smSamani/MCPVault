@@ -1,0 +1,11 @@
+#!/bin/sh
+# Run the mcp-vault CLI as the service user with the master key delivered as a
+# systemd credential (exactly like the service). Usage: sudo mcp-vault-admin <cli args>
+# Examples: mcp-vault-admin status | list | audit --tail 20 | client list
+# NOTE: `client add` / `client rotate-token` print the token on stdout; redirect it.
+exec systemd-run --quiet --wait --pipe --collect \
+  -p User=mcpvault -p Group=mcpvault \
+  -p StateDirectory=mcp-vault -p StateDirectoryMode=0700 -p UMask=0077 \
+  -p LoadCredential=mcp-vault-master-key:/etc/mcp-vault/master.key \
+  -E MCP_VAULT_HOME=/var/lib/mcp-vault \
+  /usr/bin/node /opt/mcp-vault/dist/src/cli.js "$@"

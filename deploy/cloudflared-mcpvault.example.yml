@@ -1,0 +1,10 @@
+# /etc/cloudflared/mcpvault.yml (no secrets in this file). Replace <TUNNEL-ID>.
+# The credentials JSON is passed by mcpvault-tunnel.service as systemd credential "tunnel.json".
+tunnel: <TUNNEL-ID>
+credentials-file: /run/credentials/mcpvault-tunnel.service/tunnel.json
+
+ingress:
+  - hostname: vault.example.com
+    path: ^/mcp$
+    service: http://127.0.0.1:8765
+  - service: http_status:404

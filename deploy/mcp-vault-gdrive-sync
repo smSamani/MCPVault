@@ -1,0 +1,38 @@
+#!/bin/sh
+# Upload the (already gpg-encrypted) archives from /var/backups/mcp-vault to Google
+# Drive folder "MCPVault Backups" and keep only the newest 30 there. Nothing else is
+# ever uploaded: no master.key, backup.pass, clients.txt, rclone.conf or plaintext.
+# rclone remote "gdrive" (scope drive.file) lives in /etc/mcp-vault/rclone/rclone.conf (root, 0600).
+set -eu
+umask 077
+export RCLONE_CONFIG=/etc/mcp-vault/rclone/rclone.conf
+SRC=/var/backups/mcp-vault
+REMOTE="gdrive:MCPVault Backups"
+KEEP="${GDRIVE_KEEP:-30}"
+[ -r "$RCLONE_CONFIG" ] || { echo "gdrive not configured ($RCLONE_CONFIG missing); skipping upload" >&2; exit 0; }
+
+# Run a command up to 5 times with growing pauses: the shared rclone Google client id
+# occasionally answers 403 rateLimitExceeded, which is transient.
+retry() {
+  n=1
+  until "$@"; do
+    [ "$n" -ge 5 ] && return 1
+    echo "attempt $n failed; retrying in $((n * 20)) s" >&2
+    sleep $((n * 20)); n=$((n + 1))
+  done
+}
+RC="--cache-dir /tmp/rclone-cache --retries 3 --low-level-retries 5 --timeout 60s --contimeout 20s"
+
+# Only finished archives (never *.partial), never overwrite an existing remote file.
+# shellcheck disable=SC2086
+retry rclone copy "$SRC" "$REMOTE" --include 'mcp-vault-*.tar.gpg' --immutable $RC
+
+# Drive retention: names start with a UTC timestamp, so a reverse sort is newest first.
+# shellcheck disable=SC2086
+OLD=$(retry rclone lsf "$REMOTE" --files-only $RC |
+  grep -E '^mcp-vault-[0-9]{8}T[0-9]{6}Z(-change)?\.tar\.gpg$' | sort -r | tail -n +"$((KEEP + 1))" || true)
+for f in $OLD; do
+  # shellcheck disable=SC2086
+  retry rclone deletefile "$REMOTE/$f" --drive-use-trash=false $RC
+done
+echo "gdrive sync done"

@@ -1,0 +1,15 @@
+[Unit]
+Description=MCPVault nightly encrypted backup + Google Drive upload
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+ExecStart=/usr/bin/flock /var/backups/mcp-vault/.lock /bin/sh -c '/usr/local/sbin/mcp-vault-backup nightly && /usr/local/sbin/mcp-vault-gdrive-sync'
+TimeoutStartSec=600
+Nice=10
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/backups/mcp-vault /etc/mcp-vault/rclone
+NoNewPrivileges=yes

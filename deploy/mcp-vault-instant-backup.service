@@ -1,0 +1,17 @@
+[Unit]
+Description=MCPVault instant encrypted backup + Google Drive upload
+After=network-online.target
+Wants=network-online.target
+
+[Service]
+Type=oneshot
+# Debounce window: further edits during the sleep are covered by the same run.
+ExecStartPre=/bin/sleep 10
+ExecStart=/usr/local/sbin/mcp-vault-instant-backup
+TimeoutStartSec=600
+Nice=10
+PrivateTmp=yes
+ProtectHome=yes
+ProtectSystem=strict
+ReadWritePaths=/var/backups/mcp-vault /etc/mcp-vault/rclone
+NoNewPrivileges=yes

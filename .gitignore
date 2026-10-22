@@ -1,0 +1,67 @@
+# ---------------------------------------------------------------------------
+# mcp-vault: strict ignore list. Secrets and vault data must NEVER be committed.
+# The live vault lives in ~/.mcp-vault (outside this repo) but we defend in depth.
+# ---------------------------------------------------------------------------
+
+# Vault data, keys, tokens, client registries, audit logs
+.mcp-vault/
+vault/
+data/
+*.vault
+*.enc
+*.enc.*
+*.mcpvault
+*.mcpvault-backup
+*backup*.json
+vault*.json
+clients*.json
+!package.json
+!tsconfig.json
+*.key
+*.pem
+*.p12
+*.pfx
+*.keychain
+*.keychain-db
+*token*
+!src/**/*token*.ts
+*secret*
+*.secrets
+credentials*
+audit*.log
+*.log
+*.lock
+*.tmp
+
+# Environment files (any variant)
+.env
+.env.*
+*.env
+.envrc
+
+# Build artifacts and dependencies
+node_modules/
+dist/
+build/
+coverage/
+*.tsbuildinfo
+.npm/
+
+# OS / editor noise
+.DS_Store
+.AppleDouble
+.vscode/
+.idea/
+*.swp
+*~
+
+# Local task notes and agent logs (never published)
+TASK*.md
+FOLLOWUP.md
+REPO_DESCRIPTION.txt
+run-cleanup.sh
+
+*.log
+*.out
+run-cleanup.sh
+TASK*.md
